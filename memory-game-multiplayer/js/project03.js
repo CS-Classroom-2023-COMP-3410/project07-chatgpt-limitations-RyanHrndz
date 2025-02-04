@@ -8,6 +8,11 @@ const gridColsInput = document.getElementById("gridCols");
 const welcomeContainer = document.querySelector(".welcome-container");
 const gameContainer = document.querySelector(".game-container");
 
+// Multiplayer Elements
+const turnIndicator = document.getElementById("turnIndicator");
+const player1ScoreDisplay = document.getElementById("player1Score");
+const player2ScoreDisplay = document.getElementById("player2Score");
+
 let cards = [];
 let flippedCards = [];
 let moves = 0;
@@ -15,6 +20,11 @@ let timerInterval = null;
 let timeElapsed = 0;
 let gridRows = 4;
 let gridCols = 4;
+
+// Multiplayer Variables
+let currentPlayer = 1;  // 1 = Player 1, 2 = Player 2
+let player1Score = 0;
+let player2Score = 0;
 
 // List of animal image filenames
 const animalImages = [
@@ -54,7 +64,7 @@ function initializeGame() {
   cards = shuffleArray(cardPairs);
   createGrid();
   resetGameInfo();
-  startTimer(); // ✅ Fix: Ensure the timer starts when the game begins
+  startTimer();
 }
 
 function shuffleArray(array) {
@@ -72,7 +82,7 @@ function createGrid() {
   cards.forEach((image) => {
     const card = document.createElement("div");
     card.className = "card";
-    card.dataset.symbol = image; // Using image filename for matching
+    card.dataset.symbol = image;
     card.innerHTML = `
       <div class="card-inner">
         <div class="card-front"></div>
@@ -108,29 +118,56 @@ function handleCardClick(e) {
 function checkForMatch() {
   const [card1, card2] = flippedCards;
 
-  // Compare image filenames instead of unique symbols
   if (card1.dataset.symbol === card2.dataset.symbol) {
     card1.classList.add("matched");
     card2.classList.add("matched");
+
+    // Assign point to the current player
+    if (currentPlayer === 1) {
+      player1Score++;
+      player1ScoreDisplay.textContent = player1Score;
+    } else {
+      player2Score++;
+      player2ScoreDisplay.textContent = player2Score;
+    }
+
     flippedCards = [];
-    
+
     // Check if all cards are matched
     if (document.querySelectorAll(".card.matched").length === cards.length) {
       clearInterval(timerInterval);
-      alert(`Game completed in ${moves} moves and ${formatTime(timeElapsed)}!`);
+      determineWinner();
     }
   } else {
     setTimeout(() => {
       card1.classList.remove("flipped");
       card2.classList.remove("flipped");
       flippedCards = [];
+
+      // Switch to the next player
+      currentPlayer = currentPlayer === 1 ? 2 : 1;
+      turnIndicator.textContent = `Player ${currentPlayer}`;
     }, 1000);
   }
 }
 
+function determineWinner() {
+  let winnerMessage = "";
+
+  if (player1Score > player2Score) {
+    winnerMessage = "🎉 Player 1 Wins!";
+  } else if (player2Score > player1Score) {
+    winnerMessage = "🎉 Player 2 Wins!";
+  } else {
+    winnerMessage = "🤝 It's a tie!";
+  }
+
+  alert(`Game completed in ${moves} moves and ${formatTime(timeElapsed)}!\n${winnerMessage}`);
+}
+
 function startTimer() {
   timeElapsed = 0;
-  clearInterval(timerInterval); // ✅ Fix: Ensure previous timer is cleared
+  clearInterval(timerInterval);
   timerInterval = setInterval(() => {
     timeElapsed++;
     timer.textContent = formatTime(timeElapsed);
@@ -144,13 +181,21 @@ function formatTime(seconds) {
 function resetGameInfo() {
   moves = 0;
   moveCounter.textContent = moves;
-  clearInterval(timerInterval); // ✅ Fix: Clear timer on game reset
+  clearInterval(timerInterval);
   timer.textContent = "00:00";
+
+  // Reset multiplayer variables
+  currentPlayer = 1;
+  player1Score = 0;
+  player2Score = 0;
+  player1ScoreDisplay.textContent = "0";
+  player2ScoreDisplay.textContent = "0";
+  turnIndicator.textContent = "Player 1";
 }
 
 restartBtn.addEventListener("click", () => {
   gameContainer.classList.add("hidden");
   welcomeContainer.classList.remove("hidden");
-  clearInterval(timerInterval); // ✅ Fix: Clear the timer on restart
+  clearInterval(timerInterval);
   resetGameInfo();
 });
